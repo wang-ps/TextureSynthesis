@@ -13,11 +13,7 @@ function [ X ] = TextureSynthesis(Z, m, n, w, X )
     k = c*(2*w+1)^2; % #pixel in a window
    
     % initialize zp
-    %mzp = floor((m-1-2*w)/sample_rate + 1);
-    %nzp = floor((n-1-2*w)/sample_rate + 1);
     zp = zeros(m, n, 2);
-    %zp(:, :, 1) = randi([1+w, mz-w], m, n);
-    %zp(:, :, 2) = randi([1+w, nz-w], m, n);
 
     % nearest neighbour data
     ZN = zeros((mz-2*w)*(nz-2*w), k);
@@ -35,6 +31,7 @@ function [ X ] = TextureSynthesis(Z, m, n, w, X )
         % step 1
         % calc nearest neighbour
         t1 = tic;
+        zp_old = zp;
         for i = w+1 : sample_rate : m-w
             for j = w+1 : sample_rate : n-w
                 xp = reshape(X(i-w:i+w, j-w:j+w, :), 1, k);
@@ -46,6 +43,12 @@ function [ X ] = TextureSynthesis(Z, m, n, w, X )
                 zi = fix((idx-zj)/(nz-2*w) + 1);
                 zp(i, j, :) = [zi+w zj+w];
             end
+        end
+        
+        % teiminate?
+        zp_old = zp_old-zp;
+        if (sum(abs(zp_old(:))) < 20)
+            break;
         end
         t2 = toc(t1); 
         

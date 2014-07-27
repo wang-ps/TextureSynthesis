@@ -15,8 +15,8 @@ Z = imread('texture.png');
   % initialize X for level 2
   X = imresize(Z(1:50, 1:50, :), [100, 100]); 
 
-  X = TextureSynthesis(Zp{2}, 100, 100, 8, X);
-  X = TextureSynthesis(Zp{2}, 100, 100, 4, X);
+  X = TextureSynthesis(Zp{2}, 100, 100, 8, 3, X);
+  X = TextureSynthesis(Zp{2}, 100, 100, 4, 3, X);
 
   %% level 1
   disp('-----------');
@@ -27,7 +27,7 @@ Z = imread('texture.png');
   X1(1:2:end, 1:2:end, :) = X;
   X = 4*imfilter(X1, fspecial('gaussian'), 'replicate');
 
-  X = TextureSynthesis(Z, 200, 200, 8, X);
-  X = TextureSynthesis(Z, 200, 200, 4, X);
-  X = TextureSynthesis(Z, 200, 200, 2, X);
+  X = TextureSynthesis(Z, 200, 200, 8, 3, X);
+  X = TextureSynthesis(Z, 200, 200, 4, 3, X);
+  X = TextureSynthesis(Z, 200, 200, 2, 5, X);
   

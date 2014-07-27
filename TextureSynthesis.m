@@ -1,4 +1,4 @@
-function [ X ] = TextureSynthesis(Z, m, n, w, X )
+function [ X ] = TextureSynthesis(Z, m, n, w, iter_num,  X )
 % Texture Synthesis
 
     figure;
@@ -9,7 +9,6 @@ function [ X ] = TextureSynthesis(Z, m, n, w, X )
     % algorithm parameters
     [mz, nz, c] = size(Z);
     sample_rate = floor(w/2);
-    iter_num = 10;
     k = c*(2*w+1)^2; % #pixel in a window
    
     % initialize zp

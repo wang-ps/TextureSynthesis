@@ -1,18 +1,21 @@
-function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Z0)
+function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Xp)
 % Inverse Texture Synthesis
 
     
 	[mx, nx, c] = size(X);
-	[mz, nz, c] = size(Z0);
-    Z = Z0;
-
-	nPixel = c*(2*w+1)^2; % #pixel in a window
-	Zp = zeros(mx, nx, 2); % Xp -> Zp, inverse item
-	Xq = zeros(mz, nz, 2); % Zq -> Xq, forward item
+	[mz, nz, c] = size(Xp);
 
 	alpha = 0.01;
 	sample_rate_inv = floor(w/2);
 	sample_rate_for = floor(w/4);
+	weight_inv = (mx*nx) / sample_rate_inv^2 ;
+	weight_for = alpha * (mz*nz) / sample_rate_for^2;
+
+	nPixel = c*(2*w+1)^2; % #pixel in a window
+	Zp = zeros(mx, nx, 2); % Xp -> Zp, inverse item
+	%Xq = zeros(mz, nz, 2); % Zq -> Xq, forward item
+	X = zeros(mz, nz, c);
+
 
 % 	% calculate c(p)
 % 	cp = zeros(mx, nx);
@@ -45,7 +48,7 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Z0)
 				chs = [];								% coherent set
 				for ic = 1 : 2*w+1
 					for jc = 1 : 2*w+1
-						chs = [chs, sq(chp(i, j))];
+						chs = [chs; sq(chp(ic, jc))];
 					end
 				end
 				KCHS{i, j} = unique(chs, 'rows');			
@@ -56,10 +59,10 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Z0)
 		ZX1 = cell(mz, nz);
 		% for the forward item
 		for i = w+1 : sample_rate_for : mz-w
-			for j = w+1 : nz-w
+			for j = w+1 : sample_rate_for : nz-w
 				for iw = -w : w
 					for jw = -w : w
-						ZX1(i + iw, j+jw) = [ZX1(i + iw, j+jw); Xq(i, j) + [iw, jw]];
+						ZX1{i + iw, j+jw} = [ZX1{i + iw, j+jw}; Xq(i, j) + [iw, jw]];
 					end
 				end
 			end
@@ -70,31 +73,31 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Z0)
 			for j = w+1 : nx-w
 				for iw = -w : w
 					for jw = -w : w
-						[izp, jzp] = Zp(i, j);
-						ZX2(izp + iw, jzp + jw) = [ZX2(izp + iw, jzp + jw); [i, j] + [iw, jw]];
+						izp = Zp(i, j, 1);
+						jzp = Zp(i, j, 2);
+						ZX2{izp + iw, jzp + jw} = [ZX2{izp + iw, jzp + jw}; [i, j] + [iw, jw]];
 					end
 				end
 			end
 		end
 
 		% discrete optimization
-		weight_inv = (mx*nx) / sample_rate_inv^2 ;
-		weight_for = alpha * (mz*nz) / sample_rate_for^2;
 		for i = w+1 : mz-w
 			for j = w+1 : nz-w
 				energy = 1.0*e30;
 				inum = size(KCHS{i, j}, 1);
-				ZXP1 = X(ZX1(i, j), :);
-				ZXP2 = X(ZX2(i, j), :);
+				ZXP1 = X(ZX1{i, j}, :); % corresponding pixel color
+				ZXP2 = X(ZX2{i, j}, :);
 				ZXn1 = size(ZX1, 1);
 				ZXn2 = size(ZX2, 1);
 					
 				for ik = 1 : inum
-					[ic, jc] = KCHS{i, j}(ik, :);
+					ic = KCHS{i, j}(ik, 1);
+					jc = KCHS{i, j}(ik, 2);
 
 					e = 0;
 					for izx = 1 : ZXn1
-						dzxp = ZXP1(izx, :) - X(ic, jc, :);
+						dzxp = ZXP1(izx, :) - X(ic, jc, :); % difference of pixel color
 						e = e + dzxp' * dzxp;
 					end
 					e = e * weight_for;
@@ -156,15 +159,16 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Z0)
 				dis(:, :, 1) = diag(-w:w)*ones(2*w+1);
 				dis(:, :, 2) = ones(2*w+1)*diag(-w:w);	% displacement
 				chp = Xp(i-w:i+w, j-w:j+w, :) - dis; 	% coherent pixel
-				chs = KC(chp(1, 1));					% coherent set
+				chs = [];					% coherent set
 				for ic = 1 : 2*w+1
 					for jc = 1 : 2*w+1
-						chs = union(chs, sq(chp(i, j)));
+						chs = [chs; sq(chp(i, j))];
 					end
 				end
+				chs = unique(chs, 'rows');
 
 				% exhaustive search
-				[nc] = size(chs, 1);
+				nc = size(chs, 1);
 				for ic = 1:nc
 					ci = chs(ic, 1);
                     cj = chs(ic, 2);

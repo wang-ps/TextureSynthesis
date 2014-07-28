@@ -1,8 +1,10 @@
-function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
+function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Z0)
 % Inverse Texture Synthesis
 
+    
 	[mx, nx, c] = size(X);
 	[mz, nz, c] = size(Z0);
+    Z = Z0;
 
 	nPixel = c*(2*w+1)^2; % #pixel in a window
 	Zp = zeros(mx, nx, 2); % Xp -> Zp, inverse item
@@ -12,10 +14,25 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
 	sample_rate_inv = floor(w/2);
 	sample_rate_for = floor(w/4);
 
+% 	% calculate c(p)
+% 	cp = zeros(mx, nx);
+% 	nXc = size(Xc, 1);
+% 	Xcv = size(nXc, nPixel);
+% 	for i = 1 : nXc
+% 		[ixc, jxc] = Xc(i);
+% 		Xcv(i, :) = reshape(X(ixc-w:ixc+w, jxc-w:jxc+w, :), 1, nPixel);
+% 	end
+% 	for i = 1 : mx-2*w
+% 		for j = 1 : nx-2*w
+% 			Xv = reshape(X(i-w:i+w, j-w:jxc+w, :), 1, nPixel);
+% 		end
+% 	end
+
+    
 	for it = 1:iter_num
 	
 		% ---------
-		% z E-step
+		%% z E-step
 		% calc k-coherence set
 		KCHS = cell(mz, nz);
 		dis(:, :, 1) = diag(-w:w)*ones(2*w+1);
@@ -76,13 +93,13 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
 					[ic, jc] = KCHS{i, j}(ik, :);
 
 					e = 0;
-					for izx = 1 : zxn1
+					for izx = 1 : ZXn1
 						dzxp = ZXP1(izx, :) - X(ic, jc, :);
 						e = e + dzxp' * dzxp;
 					end
 					e = e * weight_for;
 
-					for izx = 1 : zxn2
+					for izx = 1 : ZXn2
 						dzxp = ZXP2(izx, :) - X(ic, jc, :);
 						e = e + dzxp' * dzxp;
 					end
@@ -98,7 +115,7 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
 		end
 
 		% ----------
-		% Inverse M-step
+		%% Inverse M-step
 		% nearest neighbour data
 	    ZN = zeros((mz-2*w)*(nz-2*w), k);
 	    for i = 1 : mz-2*w
@@ -113,7 +130,8 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
 		nXc = size(Xc, 1);
 		Zp1 = size(nXc, 2);
 		for i = 1 : nXc
-			[ixc jxc] = Xc(i, :);
+			ixc = Xc(i, 1);
+            jxc = Xc(i, 2);
 			Xv = reshape(X(ixc-w:ixc+w, jxc-w:jxc+w, :), 1, nPixel);
 			idx = knnsearch(kdt, Xv);
 			zj = mod(idx, nz-2*w);
@@ -123,10 +141,15 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
             zi = fix((idx-zj)/(nz-2*w) + 1);
             Zp1(i, :) = [zi+w zj+w];
 		end
-		
+
+		for i = 1 : mx-2*w
+			for j = 1 : nx-2*w
+				Zp(i, j, :) = Zp1(cp(i, j), :);
+			end
+		end
 
 		% ----------
-		% Forward M-step
+		%% Forward M-step
 		for i = w+1 : zm-w
 			for j = w+1 : zn-w
 				% calc k-coherence set
@@ -143,7 +166,8 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
 				% exhaustive search
 				[nc] = size(chs, 1);
 				for ic = 1:nc
-					[ci cj] = chs(ic, :);
+					ci = chs(ic, 1);
+                    cj = chs(ic, 2);
 					e = norm(X(ci-w:ci+w, cj-w:cj+w, :) - Z(i-w:i+w, j-w:j+w, :), 'fro');
 					if e < energy
 						energy = e;
@@ -153,9 +177,5 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, Z0)
 
 			end
 		end
-
 	end
-
-
-
 end

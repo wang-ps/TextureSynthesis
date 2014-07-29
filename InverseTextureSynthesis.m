@@ -6,6 +6,7 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 	[mz, nz, c] = size(Z);
     k = c*(2*w+1)^2;
     X = double(X);
+    Z = double(Z);
 
 	alpha = 0.01;
 	sample_rate_inv = ceil(w/2);
@@ -39,23 +40,25 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 	for it = 1:iter_num	
 		%% z E-step
 		% calc k-coherence set
-		KCHS = cell(mz, nz);
-		dis(:, :, 1) = diag(-w:w)*ones(2*w+1);
-		dis(:, :, 2) = ones(2*w+1)*diag(-w:w);	% displacement
+% 		KCHS = cell(mz, nz);
+% 		dis(:, :, 1) = diag(-w:w)*ones(2*w+1);
+% 		dis(:, :, 2) = ones(2*w+1)*diag(-w:w);	% displacement
+% 
+% 		for i = w+1 : mz-w
+% 			for j = w+1 : nz-w						
+% 				chp = Xq(i-w:i+w, j-w:j+w, :) - dis; 	% coherent pixel
+% 				chs = [];								% coherent set
+% 				for ic = 1 : 2*w+1
+% 					for jc = 1 : 2*w+1   
+% 						chs = [chs; sq{chp(ic, jc, 1), chp(ic, jc, 2)}];
+% 					end
+% 				end
+% 				KCHS{i, j} = unique(chs, 'rows');	
+% 			end 
+% 		end		
 
-		for i = w+1 : mz-w
-			for j = w+1 : nz-w						
-				chp = Xq(i-w:i+w, j-w:j+w, :) - dis; 	% coherent pixel
-				chs = [];								% coherent set
-				for ic = 1 : 2*w+1
-					for jc = 1 : 2*w+1   
-						chs = [chs; sq{chp(ic, jc, 1), chp(ic, jc, 2)}];
-					end
-				end
-				KCHS{i, j} = unique(chs, 'rows');	
-			end 
-		end		
-
+        KCHS  = KCoherentSet( mz, nz, w, Xq, sq );
+        
 		ZX1 = cell(mz, nz);
 		% for the forward item
 		for i = w+1 : sample_rate_for : mz-w
@@ -155,39 +158,34 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
             Zp1(i, :) = [zi zj];
 		end
 
-		for i = 1 : mx-2*w
-			for j = 1 : nx-2*w
+		for i = w+1 : mx-w
+			for j = w+1 : nx-w                
 				Zp(i, j, :) = Zp1(cp(i, j), :);
 			end
         end
         
 		%% Forward M-step
-		for i = w+1 : zm-w
-			for j = w+1 : zn-w
-				% calc k-coherence set
-				dis(:, :, 1) = diag(-w:w)*ones(2*w+1);
-				dis(:, :, 2) = ones(2*w+1)*diag(-w:w);	% displacement
-				chp = Xp(i-w:i+w, j-w:j+w, :) - dis; 	% coherent pixel
-				chs = [];					% coherent set
-				for ic = 1 : 2*w+1
-					for jc = 1 : 2*w+1
-						chs = [chs; sq(chp(i, j))];
-					end
-				end
-				chs = unique(chs, 'rows');
-
+        
+        % calculate K-coherent set
+        KCHS  = KCoherentSet( mz, nz, w, Xq, sq );
+		for i = w+1 : mz-w
+			for j = w+1 : nz-w
+                energy = 1.0e30;
 				% exhaustive search
+                chs = KCHS{i, j};
 				nc = size(chs, 1);
 				for ic = 1:nc
 					ci = chs(ic, 1);
                     cj = chs(ic, 2);
-					e = norm(X(ci-w:ci+w, cj-w:cj+w, :) - Z(i-w:i+w, j-w:j+w, :), 'fro');
+                    e = 0;
+                    for ie = 1: c
+                        e = e + norm(X(ci-w:ci+w, cj-w:cj+w, i) - Z(i-w:i+w, j-w:j+w, i), 'fro');
+                    end
 					if e < energy
 						energy = e;
-						Xp(i, j, :) = [ci, cj];
+						Xq(i, j, :) = [ci, cj];
 					end
-				end
-
+                end
 			end
         end
 	end

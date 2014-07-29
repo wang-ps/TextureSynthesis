@@ -25,11 +25,11 @@ function [ Xc, cp ] = ClusterX( X, w, num )
     	end
     end
 
-    cp = zeros(m, n, 2);
+    cp = zeros(m, n);
     for i = 1 : m-2*w
         for j = 1 : n-2*w
         	ii =  (i-1)*(n-2*w) + j;
-    		cp(i+w, j+w, :) = Xc(IDX(ii));
+    		cp(i+w, j+w) = IDX(ii);
     	end
     end
 end

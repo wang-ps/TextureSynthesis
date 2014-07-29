@@ -14,8 +14,9 @@ function [ Xc, cp ] = ClusterX( X, w, num )
     [IDX, ~, ~, D] = kmeans(XN, num);
     
     Xc = zeros(num, 2);
+    nidx = size(IDX, 1);
     distance = 1.0e30 * ones(num, 1);
-    for i = 1 : num
+    for i = 1 : nidx
     	d = D(i, IDX(i));
     	if d < distance(IDX(i))
     		distance(IDX(i)) = d;

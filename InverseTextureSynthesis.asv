@@ -4,7 +4,6 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
     
 	[mx, nx, c] = size(X);
 	[mz, nz, c] = size(Z);
-    X = double(X);
 
 	alpha = 0.01;
 	sample_rate_inv = ceil(w/2);
@@ -86,24 +85,15 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 			for j = w+1 : nz-w
 				energy = 1.0e30;
 				inum = size(KCHS{i, j}, 1);
-                ZXPos1 = ZX1{i, j};% corresponding pixel
-                ZXPos2 = ZX2{i, j};
-
-                nZ1 = size(ZXPos1, 1);
-                nZ2 = size(ZXPos2, 1);
-
-                ZXP1 = zeros(nZ1, 3);
-                for iz1 = 1 : nZ1
-                	ZXP1(iz1, :) = X(ZXPos1(iz1, 1), ZXPos1(iz1, 2), :);
-                end
-
-                ZXP2 = zeros(nZ2, 3);
-                for iz2 = 1 : nZ2
-                	ZXP2(iz2, :) = X(ZXPos2(iz1, 1), ZXPos2(iz1, 2), :);
-                end
-                
+                ZXP1 = ZX1{i, j};
+                ZXP2 
+                ZXP1 = X(, :); % corresponding pixel color
+				ZXP2 = X(ZX2{i, j}, :);
+				
                 ZXn1 = size(ZX1, 1);
-				ZXn2 = size(ZX2, 1);              
+				ZXn2 = size(ZX2, 1);
+                
+               
 					
 				for ik = 1 : inum
 					ic = KCHS{i, j}(ik, 1);

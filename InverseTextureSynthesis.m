@@ -1,9 +1,9 @@
-function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Xp)
+function [ Z ] = TextureSynthesis(X, w, mz, nz, sq, Xc, cp, )
 % Inverse Texture Synthesis
 
     
 	[mx, nx, c] = size(X);
-	[mz, nz, c] = size(Xp);
+	% [mz, nz, c] = size(Xp);
 
 	alpha = 0.01;
 	sample_rate_inv = floor(w/2);
@@ -12,8 +12,12 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Xp)
 	weight_for = alpha * (mz*nz) / sample_rate_for^2;
 
 	nPixel = c*(2*w+1)^2; % #pixel in a window
-	Zp = zeros(mx, nx, 2); % Xp -> Zp, inverse item
+	%Zp = zeros(mx, nx, 2); % Xp -> Zp, inverse item
 	%Xq = zeros(mz, nz, 2); % Zq -> Xq, forward item
+	Zp(:, :, 1) = randi([w+1, mx-w], mx, nx);
+	Zp(:, :, 2) = randi([w+1, nx-w], mx, nx);
+	Xp(:, :, 1) = randi([w+1, mz-w], mz, nz);
+	Xp(:, :, 2) = randi([w+1, nx-w], mz, nz);
 	X = zeros(mz, nz, c);
 
 
@@ -31,7 +35,7 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Xp)
 % 		end
 % 	end
 
-    
+    iter_num = 10;
 	for it = 1:iter_num
 	
 		% ---------
@@ -48,7 +52,7 @@ function [ Z ] = TextureSynthesis(X, w, iter_num, sq, Xc, cp, Xp)
 				chs = [];								% coherent set
 				for ic = 1 : 2*w+1
 					for jc = 1 : 2*w+1
-						chs = [chs; sq(chp(ic, jc))];
+						chs = [chs; sq{chp(ic, jc)}];
 					end
 				end
 				KCHS{i, j} = unique(chs, 'rows');			

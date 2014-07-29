@@ -1,12 +1,11 @@
-function [ i, j ] = Idx2Coordinate( idx, w, n )
+function [ zi, zj ] = Idx2Coordinate( idx, w, n )
 
-	j = mod(idx, n-2*w);
-    if j == 0
-        j = w;
+ 	zj = mod(idx, n-2*w);
+	if zj == 0
+        zj = w;
     end
-    i = fix((idx-j)/(n-2*w) + 1);
-    i = i+w;
-    j = j+w;
-
+    zi = fix((idx-zj)/(n-2*w) + 1);
+    zi = zi + w;
+    zj = zj + w;
 end
 

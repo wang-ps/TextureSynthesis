@@ -12,15 +12,15 @@ function [ Xc, cp ] = ClusterX( X, w, num )
     end
 
     [IDX, ~, ~, D] = kmeans(XN, num);
-    
+    nidx = size(IDX, 1);
     Xc = zeros(num, 2);
     distance = 1.0e30 * ones(num, 1);
-    for i = 1 : num
+    for i = 1 : nidx
     	d = D(i, IDX(i));
     	if d < distance(IDX(i))
     		distance(IDX(i)) = d;
-            [ic, jc] = Idx2Coordinate(i, w, n);
-    		Xc(IDX(i), :) = [ic, jc];
+            [ic, jc] = 
+    		Xc(IDX(i), :) = Idx2Coordinate(i, w, n);
     	end
     end
 
@@ -28,7 +28,7 @@ function [ Xc, cp ] = ClusterX( X, w, num )
     for i = 1 : m-2*w
         for j = 1 : n-2*w
         	ii =  (i-1)*(n-2*w) + j;
-    		cp(i+w, j+w, :) = Xc(IDX(ii));
+    		cp(i, j, :) = Xc(IDX(ii));
     	end
     end
 end

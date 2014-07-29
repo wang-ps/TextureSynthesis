@@ -1,9 +1,9 @@
-function [ Z ] = TextureSynthesis(X, w, mz, nz, sq, Xc, cp, )
+function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 % Inverse Texture Synthesis
 
     
 	[mx, nx, c] = size(X);
-	% [mz, nz, c] = size(Xp);
+	[mz, nz, c] = size(Z);
 
 	alpha = 0.01;
 	sample_rate_inv = floor(w/2);
@@ -38,7 +38,72 @@ function [ Z ] = TextureSynthesis(X, w, mz, nz, sq, Xc, cp, )
     iter_num = 10;
 	for it = 1:iter_num
 	
-		% ---------
+		% ----------
+		%% Inverse M-step
+		% nearest neighbour data
+	    ZN = zeros((mz-2*w)*(nz-2*w), k);
+	    for i = 1 : mz-2*w
+	        for j = 1 : nz-2*w
+	            idx = (i-1)*(nz-2*w) + j;
+	            ZN(idx, :) = reshape(Z(i:i+2*w, j:j+2*w, :), 1, nPixel);
+	        end
+	    end
+	    %create kdtree
+	    kdt = createns(ZN,'nsmethod','kdtree');
+
+		nXc = size(Xc, 1);
+		Zp1 = size(nXc, 2);
+		for i = 1 : nXc
+			ixc = Xc(i, 1);
+            jxc = Xc(i, 2);
+			Xv = reshape(X(ixc-w:ixc+w, jxc-w:jxc+w, :), 1, nPixel);
+			idx = knnsearch(kdt, Xv);
+			zj = mod(idx, nz-2*w);
+			if zj == 0
+                zj = w;
+            end
+            zi = fix((idx-zj)/(nz-2*w) + 1);
+            Zp1(i, :) = [zi+w zj+w];
+		end
+
+		for i = 1 : mx-2*w
+			for j = 1 : nx-2*w
+				Zp(i, j, :) = Zp1(cp(i, j), :);
+			end
+		end
+
+		% ----------
+		%% Forward M-step
+		for i = w+1 : zm-w
+			for j = w+1 : zn-w
+				% calc k-coherence set
+				dis(:, :, 1) = diag(-w:w)*ones(2*w+1);
+				dis(:, :, 2) = ones(2*w+1)*diag(-w:w);	% displacement
+				chp = Xp(i-w:i+w, j-w:j+w, :) - dis; 	% coherent pixel
+				chs = [];					% coherent set
+				for ic = 1 : 2*w+1
+					for jc = 1 : 2*w+1
+						chs = [chs; sq(chp(i, j))];
+					end
+				end
+				chs = unique(chs, 'rows');
+
+				% exhaustive search
+				nc = size(chs, 1);
+				for ic = 1:nc
+					ci = chs(ic, 1);
+                    cj = chs(ic, 2);
+					e = norm(X(ci-w:ci+w, cj-w:cj+w, :) - Z(i-w:i+w, j-w:j+w, :), 'fro');
+					if e < energy
+						energy = e;
+						Xp(i, j, :) = [ci, cj];
+					end
+				end
+
+			end
+		end
+
+			% ---------
 		%% z E-step
 		% calc k-coherence set
 		KCHS = cell(mz, nz);
@@ -119,71 +184,6 @@ function [ Z ] = TextureSynthesis(X, w, mz, nz, sq, Xc, cp, )
 					end
 				end				
 			end 
-		end
-
-		% ----------
-		%% Inverse M-step
-		% nearest neighbour data
-	    ZN = zeros((mz-2*w)*(nz-2*w), k);
-	    for i = 1 : mz-2*w
-	        for j = 1 : nz-2*w
-	            idx = (i-1)*(nz-2*w) + j;
-	            ZN(idx, :) = reshape(Z(i:i+2*w, j:j+2*w, :), 1, nPixel);
-	        end
-	    end
-	    %create kdtree
-	    kdt = createns(ZN,'nsmethod','kdtree');
-
-		nXc = size(Xc, 1);
-		Zp1 = size(nXc, 2);
-		for i = 1 : nXc
-			ixc = Xc(i, 1);
-            jxc = Xc(i, 2);
-			Xv = reshape(X(ixc-w:ixc+w, jxc-w:jxc+w, :), 1, nPixel);
-			idx = knnsearch(kdt, Xv);
-			zj = mod(idx, nz-2*w);
-			if zj == 0
-                zj = w;
-            end
-            zi = fix((idx-zj)/(nz-2*w) + 1);
-            Zp1(i, :) = [zi+w zj+w];
-		end
-
-		for i = 1 : mx-2*w
-			for j = 1 : nx-2*w
-				Zp(i, j, :) = Zp1(cp(i, j), :);
-			end
-		end
-
-		% ----------
-		%% Forward M-step
-		for i = w+1 : zm-w
-			for j = w+1 : zn-w
-				% calc k-coherence set
-				dis(:, :, 1) = diag(-w:w)*ones(2*w+1);
-				dis(:, :, 2) = ones(2*w+1)*diag(-w:w);	% displacement
-				chp = Xp(i-w:i+w, j-w:j+w, :) - dis; 	% coherent pixel
-				chs = [];					% coherent set
-				for ic = 1 : 2*w+1
-					for jc = 1 : 2*w+1
-						chs = [chs; sq(chp(i, j))];
-					end
-				end
-				chs = unique(chs, 'rows');
-
-				% exhaustive search
-				nc = size(chs, 1);
-				for ic = 1:nc
-					ci = chs(ic, 1);
-                    cj = chs(ic, 2);
-					e = norm(X(ci-w:ci+w, cj-w:cj+w, :) - Z(i-w:i+w, j-w:j+w, :), 'fro');
-					if e < energy
-						energy = e;
-						Xp(i, j, :) = [ci, cj];
-					end
-				end
-
-			end
 		end
 	end
 end

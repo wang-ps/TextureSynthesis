@@ -179,7 +179,7 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
                     cj = chs(ic, 2);
                     e = 0;
                     for ie = 1: c
-                        e = e + norm(X(ci-w:ci+w, cj-w:cj+w, i) - Z(i-w:i+w, j-w:j+w, i), 'fro');
+                        e = e + norm(X(ci-w:ci+w, cj-w:cj+w, ie) - Z(i-w:i+w, j-w:j+w, ie), 'fro');
                     end
 					if e < energy
 						energy = e;

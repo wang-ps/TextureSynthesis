@@ -1,1 +1,0 @@
-X = imread('InvTexture.jpg');

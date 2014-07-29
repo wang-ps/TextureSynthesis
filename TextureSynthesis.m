@@ -35,7 +35,12 @@ function [ X ] = TextureSynthesis(Z, m, n, w, iter_num,  X )
             for j = w+1 : sample_rate : n-w
                 xp = reshape(X(i-w:i+w, j-w:j+w, :), 1, k);
                 idx = knnsearch(kdt, xp);
-                zp(i, j, :) = Idx2Coordinate(idx, w, nz);
+                zj = mod(idx, nz-2*w);
+                if zj == 0
+                    zj = w;
+                end
+                zi = fix((idx-zj)/(nz-2*w) + 1);
+                zp(i, j, :) = [zi+w zj+w];
             end
         end
         

@@ -1,5 +1,5 @@
 %% input sample texture 
-Z = imread('texture.png');
+Z = imread('.\rst\Texture-01.png');
   
   % build pyramid
   Zp{1} = Z;

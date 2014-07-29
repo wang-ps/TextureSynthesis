@@ -4,6 +4,7 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
     
 	[mx, nx, c] = size(X);
 	[mz, nz, c] = size(Z);
+    k = c*(2*w+1)^2;
     X = double(X);
 
 	alpha = 0.01;
@@ -15,9 +16,9 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 	nPixel = c*(2*w+1)^2; % #pixel in a window
 	%Zp = zeros(mx, nx, 2); % Xp -> Zp, inverse item
 	%Xq = zeros(mz, nz, 2); % Zq -> Xq, forward item
-	Zp(:, :, 1) = randi([w+1, mx-w], mx, nx);
-	Zp(:, :, 2) = randi([w+1, nx-w], mx, nx);
-	Xq(:, :, 1) = randi([w+1, mz-w], mz, nz);
+	Zp(:, :, 1) = randi([w+1, mz-w], mx, nx);
+	Zp(:, :, 2) = randi([w+1, nz-w], mx, nx);
+	Xq(:, :, 1) = randi([w+1, mx-w], mz, nz);
 	Xq(:, :, 2) = randi([w+1, nx-w], mz, nz);
 
 % 	% calculate c(p)
@@ -43,8 +44,7 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 		dis(:, :, 2) = ones(2*w+1)*diag(-w:w);	% displacement
 
 		for i = w+1 : mz-w
-			for j = w+1 : nz-w			
-				
+			for j = w+1 : nz-w						
 				chp = Xq(i-w:i+w, j-w:j+w, :) - dis; 	% coherent pixel
 				chs = [];								% coherent set
 				for ic = 1 : 2*w+1
@@ -67,10 +67,10 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 				end
 			end
 		end
-		ZX2 = cell(mx, nx);
+		ZX2 = cell(mz, nz);
 		% for the inverse item
 		for i = w+1 : sample_rate_inv : mx-w
-			for j = w+1 : nx-w
+			for j = w+1 : sample_rate_inv : nx-w
 				for iw = -w : w
 					for jw = -w : w
 						izp = Zp(i, j, 1);
@@ -99,29 +99,31 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 
                 ZXP2 = zeros(nZ2, 3);
                 for iz2 = 1 : nZ2
-                	ZXP2(iz2, :) = X(ZXPos2(iz1, 1), ZXPos2(iz1, 2), :);
+                	ZXP2(iz2, :) = X(ZXPos2(iz2, 1), ZXPos2(iz2, 2), :);
                 end
                 
-                ZXn1 = size(ZX1, 1);
-				ZXn2 = size(ZX2, 1);              
+                ZXn1 = size(ZXP1, 1);
+				ZXn2 = size(ZXP2, 1);              
 					
 				for ik = 1 : inum
 					ic = KCHS{i, j}(ik, 1);
 					jc = KCHS{i, j}(ik, 2);
 
-					e = 0;
+					e1 = 0;
 					for izx = 1 : ZXn1
-						dzxp = ZXP1(izx, :) - X(ic, jc, :); % difference of pixel color
-						e = e + dzxp' * dzxp;
+						dzxp = ZXP1(izx, :) - reshape(X(ic, jc, :), 1, 3); % difference of pixel color
+						e1 = e1 + dzxp * dzxp';
 					end
-					e = e * weight_for;
-
+					e1 = e1 * weight_for;
+                    
+                    e2 = 0 ;
 					for izx = 1 : ZXn2
-						dzxp = ZXP2(izx, :) - X(ic, jc, :);
-						e = e + dzxp' * dzxp;
+						dzxp = ZXP2(izx, :) - reshape(X(ic, jc, :), 1, 3);
+						e2 = e2 + dzxp * dzxp';
 					end
-					e = e * weight_inv;
+					e2 = e2 * weight_inv;
 
+                    e = e1 + e2;
 					if e < energy
 						energy = e;
 						Z(i, j, :) = X(ic, jc, :);
@@ -132,7 +134,7 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 		end
 		%% Inverse M-step
 		% nearest neighbour data
-	    ZN = zeros((mz-2*w)*(nz-2*w), k);
+	    ZN = zeros((mz-2*w)*(nz-2*w), nPixel);
 	    for i = 1 : mz-2*w
 	        for j = 1 : nz-2*w
 	            idx = (i-1)*(nz-2*w) + j;
@@ -143,18 +145,14 @@ function [ Z ] = InverseTextureSynthesis(X, w, sq, Xc, cp, Z)
 	    kdt = createns(ZN,'nsmethod','kdtree');
 
 		nXc = size(Xc, 1);
-		Zp1 = size(nXc, 2);
+		Zp1 = zeros(nXc, 2);
 		for i = 1 : nXc
 			ixc = Xc(i, 1);
             jxc = Xc(i, 2);
 			Xv = reshape(X(ixc-w:ixc+w, jxc-w:jxc+w, :), 1, nPixel);
 			idx = knnsearch(kdt, Xv);
-			zj = mod(idx, nz-2*w);
-			if zj == 0
-                zj = w;
-            end
-            zi = fix((idx-zj)/(nz-2*w) + 1);
-            Zp1(i, :) = [zi+w zj+w];
+            [zi, zj] = Idx2Coordinate(idx, w, nz);
+            Zp1(i, :) = [zi zj];
 		end
 
 		for i = 1 : mx-2*w

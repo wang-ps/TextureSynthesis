@@ -1,11 +1,11 @@
 X = imread('Texture-01.png');
 
 % initial Z
-mz = 16; 
-nz = 16;
-Z = X(1:16, 1:16, :);
+mz = 32; 
+nz = 32;
+Z = X(1:mz, 1:nz, :);
+w = 3;
+[Xc, cp] = ClusterX(X, w, mz*nz);
+Sq = CoherentSet(X, w, 5);
 
-[Xc, cp] = ClusterX(X, 1, mz*nz);
-Sq = CoherentSet(X, 1, 5);
-
-Z = InverseTextureSynthesis(X, 1, Sq, Xc, cp, Z);
+Z = InverseTextureSynthesis(X, w, Sq, Xc, cp, Z);

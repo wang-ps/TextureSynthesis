@@ -10,7 +10,7 @@
   subplot(1, 2, 1); imshow(Zp{1}); 
   subplot(1, 2, 2); imshow(Zp{2});
   
-  %% level 2 ( low resolution )
+  %% level 2
   mx = 200;
   nx = 200;
   w = 4;
@@ -30,9 +30,9 @@
       end
   end
   
-  % start level 2
+  %
+  X = TextureSynthesis(Zp{2}, mx/2, nx/2, 8, 3, X);
   X = TextureSynthesis(Zp{2}, mx/2, nx/2, 4, 3, X);
-  X = TextureSynthesis(Zp{2}, mx/2, nx/2, 2, 3, X);
 
   %% level 1
   disp('-----------');
@@ -44,7 +44,7 @@
   X = 4*imfilter(X1, fspecial('gaussian'), 'replicate');
 
 %   X = TextureSynthesis(Z, mx, nx, 8, 3, X);
-  X = TextureSynthesis(Z, mx, nx, 6, 3, X);
+  X = TextureSynthesis(Z, mx, nx, 8, 3, X);
   X = TextureSynthesis(Z, mx, nx, 4, 5, X);
   X = TextureSynthesis(Z, mx, nx, 2, 5, X);
   

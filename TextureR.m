@@ -31,8 +31,8 @@
   end
   
   % start level 2
-  X = TextureSynthesis(Zp{2}, mx/2, nx/2, 10, 5, X);
-  X = TextureSynthesis(Zp{2}, mx/2, nx/2, 5, 5, X);
+  X = TextureSynthesisR(Zp{2}, mx/2, nx/2, 10, 5, X);
+  X = TextureSynthesisR(Zp{2}, mx/2, nx/2, 5, 5, X);
 
   %% level 1
   disp('-----------');
@@ -43,8 +43,8 @@
   X1(1:2:end, 1:2:end, :) = X;
   X = 4*imfilter(X1, fspecial('gaussian'), 'replicate');
 
-%   X = TextureSynthesis(Z, mx, nx, 8, 3, X);
-  X = TextureSynthesis(Z, mx, nx, 12, 5, X);
-  X = TextureSynthesis(Z, mx, nx, 8, 5, X);
-  X = TextureSynthesis(Z, mx, nx, 4, 10, X);
-  X = TextureSynthesis(Z, mx, nx, 2, 10, X);
+%   X = TextureSynthesisR(Z, mx, nx, 8, 3, X);
+  X = TextureSynthesisR(Z, mx, nx, 12, 5, X);
+  X = TextureSynthesisR(Z, mx, nx, 8, 5, X);
+  X = TextureSynthesisR(Z, mx, nx, 4, 10, X);
+  X = TextureSynthesisR(Z, mx, nx, 2, 10, X);
